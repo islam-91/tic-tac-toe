@@ -92,7 +92,7 @@
   </style>
 </head>
 <body class="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-900 dark:to-gray-800 min-h-screen flex flex-col items-center justify-center p-4">
-
+  
 
   <!-- Start Screen Container -->
   <div id="start-screen" class="w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg animate-fadeIn">
@@ -147,6 +147,7 @@
         </button>
       </div>
     </div>
+    <!-- Instruction to start the game -->
     <p class="text-center text-gray-600 dark:text-gray-400 text-sm">Tap a mode to begin</p>
   </div>
 
@@ -162,6 +163,7 @@
       Player <span id="current-player">X</span>'s turn
     </div>
     <div id="board" class="grid grid-cols-3 gap-2">
+      <!-- 9 cells -->
       <div data-index="0" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
       <div data-index="1" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
       <div data-index="2" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
@@ -181,9 +183,9 @@
   <div id="toast-container" class="fixed top-4 right-4 space-y-4 z-50"></div>
 
   <script>
-    
+   
 
-    // Elements for start screen and game container
+    // Grab elements
     const startScreen = document.getElementById('start-screen');
     const gameContainer = document.getElementById('game-container');
     const modeFriendContainer = document.getElementById('mode-friend-container');
@@ -193,83 +195,79 @@
     const difficultySelection = document.getElementById('difficulty-selection');
     const difficultyButtons = document.querySelectorAll('.difficulty-btn');
     const backBtn = document.getElementById('back-to-mode');
-    
-    // Game board elements
     const board = document.getElementById('board');
     const cells = document.querySelectorAll('.cell');
     const statusDiv = document.getElementById('status');
     const currentPlayerSpan = document.getElementById('current-player');
     const resetBtn = document.getElementById('reset');
-    
-    // Game settings variables
+
+    // Game settings
     let gameMode = 'friend'; // 'friend' or 'computer'
     let computerDifficulty = 'easy'; // 'easy', 'normal', 'hard'
-    
-    // Function to initiate the game by saving settings and reloading the page
-    function initiateGame() {
-      localStorage.setItem("gameMode", gameMode);
-      localStorage.setItem("computerDifficulty", computerDifficulty);
-      localStorage.setItem("gameStarted", "true");
-      location.reload();
-    }
-    
-    // Mode selection event listeners
+
+    // On page load, check if a mode is stored in localStorage.
+    document.addEventListener('DOMContentLoaded', () => {
+      const storedGameMode = localStorage.getItem('gameMode');
+      const storedDifficulty = localStorage.getItem('computerDifficulty');
+      if (storedGameMode) {
+        gameMode = storedGameMode;
+        if (storedDifficulty) {
+          computerDifficulty = storedDifficulty;
+        }
+        // Show game board and hide start screen.
+        startScreen.classList.add('hidden');
+        gameContainer.classList.remove('hidden');
+        resetGame();
+      } else {
+        // No mode set: show start screen.
+        startScreen.classList.remove('hidden');
+        gameContainer.classList.add('hidden');
+      }
+    });
+
+    // Mode selection event handlers:
     function selectFriendMode() {
-      gameMode = 'friend';
-      difficultySelection.classList.add('hidden');
-      modeFriendContainer.classList.add('border-indigo-500');
-      modeComputerContainer.classList.remove('border-indigo-500');
-      initiateGame();
+      localStorage.setItem('gameMode', 'friend');
+      // Reload to show game board.
+      window.location.reload();
     }
+
     function selectComputerMode() {
-      gameMode = 'computer';
+      localStorage.setItem('gameMode', 'computer');
+      // Reveal difficulty options (waiting for user to choose one).
       difficultySelection.classList.remove('hidden');
-      modeComputerContainer.classList.add('border-indigo-500');
-      modeFriendContainer.classList.remove('border-indigo-500');
-      // Wait for a difficulty selection before initiating game.
     }
+
     modeFriendContainer.addEventListener('click', selectFriendMode);
     modeFriendBtn.addEventListener('click', selectFriendMode);
     modeComputerContainer.addEventListener('click', selectComputerMode);
     modeComputerBtn.addEventListener('click', selectComputerMode);
-    
+
+    // When a difficulty is selected, store it and reload.
     difficultyButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        computerDifficulty = btn.getAttribute('data-difficulty');
+        const diff = btn.getAttribute('data-difficulty');
+        localStorage.setItem('computerDifficulty', diff);
+        // Add visual ring to indicate selection.
         difficultyButtons.forEach(b => b.classList.remove('ring-2', 'ring-white'));
         btn.classList.add('ring-2', 'ring-white');
-        initiateGame();
+        // Reload to show game board.
+        window.location.reload();
       });
     });
-    
-    // Back to Mode Select: clear settings and reload the page
+
+    // Back button clears mode/difficulty and reloads to show start screen.
     backBtn.addEventListener('click', () => {
-      localStorage.removeItem("gameStarted");
-      localStorage.removeItem("gameMode");
-      localStorage.removeItem("computerDifficulty");
-      location.reload();
+      localStorage.removeItem('gameMode');
+      localStorage.removeItem('computerDifficulty');
+      window.location.reload();
     });
-    
-    // Check on load whether the game has been started
-    if(localStorage.getItem("gameStarted") === "true") {
-      // Hide start screen and show game container
-      startScreen.classList.add("hidden");
-      gameContainer.classList.remove("hidden");
-      // Load settings if needed
-      gameMode = localStorage.getItem("gameMode") || "friend";
-      computerDifficulty = localStorage.getItem("computerDifficulty") || "easy";
-      resetGame();
-    } else {
-      // Show start screen and hide game container
-      startScreen.classList.remove("hidden");
-      gameContainer.classList.add("hidden");
-    }
-    
-    // Game logic
+
+    // --- Game Logic ---
     let currentPlayer = 'X';
     let gameActive = true;
     let gameState = Array(9).fill("");
-    
+
     const winningConditions = [
       [0, 1, 2],
       [3, 4, 5],
@@ -280,11 +278,11 @@
       [0, 4, 8],
       [2, 4, 6]
     ];
-    
+
     function updateStatus(message) {
       statusDiv.textContent = message;
     }
-    
+
     function highlightWinningCells(indices) {
       indices.forEach(i => {
         const likeIcon = document.createElement('div');
@@ -300,7 +298,7 @@
         cells[i].appendChild(likeIcon);
       });
     }
-    
+
     function showToast(message, bgClass) {
       const toastContainer = document.getElementById('toast-container');
       const toast = document.createElement('div');
@@ -383,12 +381,13 @@
       }
       requestAnimationFrame(update);
     }
-    
+
     const handleCellClick = (e) => {
       const clickedCell = e.target;
       const clickedIndex = parseInt(clickedCell.getAttribute('data-index'));
       if (gameState[clickedIndex] !== "" || !gameActive) return;
-      if(gameMode === 'computer' && currentPlayer !== 'X') return;
+      // In computer mode, only allow human moves (X)
+      if (gameMode === 'computer' && currentPlayer !== 'X') return;
       gameState[clickedIndex] = currentPlayer;
       
       if (currentPlayer === 'X') {
@@ -415,12 +414,12 @@
       currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
       currentPlayerSpan.textContent = currentPlayer;
       updateStatus(`Player ${currentPlayer}'s turn`);
-      
-      if(gameMode === 'computer' && currentPlayer === 'O'){
+
+      if (gameMode === 'computer' && currentPlayer === 'O') {
         setTimeout(computerMove, 500);
       }
     };
-    
+
     const checkWin = () => {
       for (let condition of winningConditions) {
         const [a, b, c] = condition;
@@ -430,7 +429,7 @@
       }
       return false;
     };
-    
+
     const getWinningCells = () => {
       for (let condition of winningConditions) {
         const [a, b, c] = condition;
@@ -440,12 +439,12 @@
       }
       return [];
     };
-    
+
     function getRandomMove() {
       const emptyIndices = gameState.map((val, index) => val === "" ? index : null).filter(v => v !== null);
       return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
     }
-    
+
     function getNormalMove() {
       for (let i = 0; i < gameState.length; i++) {
         if (gameState[i] === "") {
@@ -469,11 +468,11 @@
       }
       return getRandomMove();
     }
-    
+
     function getEmptyIndices(board) {
       return board.map((v, i) => v === "" ? i : null).filter(v => v !== null);
     }
-    
+
     function checkWinner(board, player) {
       for (let condition of winningConditions) {
         const [a, b, c] = condition;
@@ -483,7 +482,7 @@
       }
       return false;
     }
-    
+
     function minimax(newBoard, player) {
       const availSpots = getEmptyIndices(newBoard);
       if (checkWinner(newBoard, 'X')) {
@@ -531,12 +530,12 @@
       }
       return bestMove;
     }
-    
+
     function getBestMove() {
       const bestMove = minimax(gameState.slice(), 'O');
       return bestMove.index;
     }
-    
+
     function computerMove() {
       if (!gameActive) return;
       let moveIndex;
@@ -552,7 +551,7 @@
         const cell = document.querySelector(`.cell[data-index='${moveIndex}']`);
         cell.classList.add('text-red-500');
         cell.textContent = 'O';
-    
+
         if (checkWin()) {
           updateStatus(`Player O wins!`);
           showToast(`Player O wins!`, 'bg-green-500');
@@ -571,7 +570,7 @@
         updateStatus(`Player ${currentPlayer}'s turn`);
       }
     }
-    
+
     const resetGame = () => {
       currentPlayer = 'X';
       gameActive = true;
@@ -585,7 +584,7 @@
         likeIcons.forEach(icon => icon.remove());
       });
     };
-    
+
     cells.forEach(cell => cell.addEventListener('click', handleCellClick));
     resetBtn.addEventListener('click', resetGame);
   </script>
