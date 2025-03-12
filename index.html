@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic Tac Toe - Enhanced UI/UX</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Fade in animation for containers */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+    /* New keyframe animations for toast */
+    @keyframes popIn {
+      0% {
+        transform: scale(0.8) translateX(50px);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.05) translateX(-5px);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1) translateX(0);
+        opacity: 1;
+      }
+    }
+    @keyframes rotateFadeOut {
+      0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(0.8) rotate(20deg);
+        opacity: 0;
+      }
+    }
+    .animate-popIn {
+      animation: popIn 0.6s forwards;
+    }
+    .animate-rotateFadeOut {
+      animation: rotateFadeOut 0.5s forwards;
+    }
+    /* Enhanced Toast Styles */
+    .toast {
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .toast:hover {
+      transform: scale(1.03);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.3);
+    }
+    .toast-icon svg {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+    .toast-progress {
+      height: 5px;
+      border-radius: 0 0 0.75rem 0.75rem;
+      background: linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 100%);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+    /* Cell styling */
+    .cell {
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+    .cell:hover {
+      transform: scale(1.05);
+    }
+    /* Like icon animation for winning cells */
+    @keyframes likePop {
+      0% { transform: scale(0); opacity: 0; }
+      60% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .like-icon {
+      animation: likePop 0.5s forwards;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-900 dark:to-gray-800 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- Start Screen Container -->
+  <div id="start-screen" class="w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg animate-fadeIn">
+    <h1 class="text-3xl font-bold text-center mb-6 text-gray-800 dark:text-gray-100">Welcome to Tic Tac Toe</h1>
+    <!-- Mode Selection -->
+    <div id="mode-selection" class="mb-6">
+      <h2 class="text-center text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Select Game Mode</h2>
+      <div class="flex justify-center gap-6">
+        <!-- Play with Friend -->
+        <div id="mode-friend-container" class="mode-option p-4 rounded-lg border-2 border-transparent hover:border-indigo-500 transition cursor-pointer">
+          <button id="mode-friend" class="flex flex-col items-center focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1118.364 6.636M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span class="font-medium text-gray-700 dark:text-gray-300">Play with Friend</span>
+          </button>
+        </div>
+        <!-- Play with Computer -->
+        <div id="mode-computer-container" class="mode-option p-4 rounded-lg border-2 border-transparent hover:border-indigo-500 transition cursor-pointer">
+          <button id="mode-computer" class="flex flex-col items-center focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mb-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 21h6l-.75-4M3 7h18M4 7v10a2 2 0 002 2h12a2 2 0 002-2V7" />
+            </svg>
+            <span class="font-medium text-gray-700 dark:text-gray-300">Play with Computer</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Difficulty Selection (only for computer mode) -->
+    <div id="difficulty-selection" class="mb-6 hidden">
+      <h3 class="text-center text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Select Difficulty</h3>
+      <div class="flex justify-center gap-4">
+        <button data-difficulty="easy" class="difficulty-btn p-3 bg-green-500 hover:bg-green-600 transition text-white rounded-lg flex flex-col items-center focus:outline-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 10.868v4.264a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Easy</span>
+        </button>
+        <button data-difficulty="normal" class="difficulty-btn p-3 bg-yellow-500 hover:bg-yellow-600 transition text-white rounded-lg flex flex-col items-center focus:outline-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v.01M12 10v.01M12 6v.01M12 18v.01" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Normal</span>
+        </button>
+        <button data-difficulty="hard" class="difficulty-btn p-3 bg-red-500 hover:bg-red-600 transition text-white rounded-lg flex flex-col items-center focus:outline-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Hard</span>
+        </button>
+      </div>
+    </div>
+    <!-- Instruction to start the game -->
+    <p class="text-center text-gray-600 dark:text-gray-400 text-sm">Tap a mode to begin</p>
+  </div>
+
+  <!-- Game Container (initially hidden) -->
+  <div id="game-container" class="hidden w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg animate-fadeIn">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Tic Tac Toe</h1>
+      <button id="back-to-mode" class="text-sm bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded focus:outline-none">
+        Back to Mode Select
+      </button>
+    </div>
+    <div id="status" class="text-center text-xl font-medium mb-4 text-gray-700 dark:text-gray-300">
+      Player <span id="current-player">X</span>'s turn
+    </div>
+    <div id="board" class="grid grid-cols-3 gap-2">
+      <!-- 9 cells -->
+      <div data-index="0" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+      <div data-index="1" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+      <div data-index="2" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+      <div data-index="3" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+      <div data-index="4" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+      <div data-index="5" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+      <div data-index="6" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+      <div data-index="7" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+      <div data-index="8" class="cell border border-gray-300 dark:border-gray-600 flex items-center justify-center h-24 text-4xl cursor-pointer"></div>
+    </div>
+    <button id="reset" class="mt-6 w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white py-2 px-4 rounded shadow">
+      Reset Game
+    </button>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 space-y-4 z-50"></div>
+
+  <script>
+
+
+    // Start screen elements
+    const startScreen = document.getElementById('start-screen');
+    const modeFriendContainer = document.getElementById('mode-friend-container');
+    const modeComputerContainer = document.getElementById('mode-computer-container');
+    const modeFriendBtn = document.getElementById('mode-friend');
+    const modeComputerBtn = document.getElementById('mode-computer');
+    const difficultySelection = document.getElementById('difficulty-selection');
+    const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+
+    // Game container elements
+    const gameContainer = document.getElementById('game-container');
+    const board = document.getElementById('board');
+    const cells = document.querySelectorAll('.cell');
+    const statusDiv = document.getElementById('status');
+    const currentPlayerSpan = document.getElementById('current-player');
+    const resetBtn = document.getElementById('reset');
+    const backBtn = document.getElementById('back-to-mode');
+
+    // Game settings variables
+    let gameMode = 'friend'; // 'friend' or 'computer'
+    let computerDifficulty = 'easy'; // 'easy', 'normal', 'hard'
+
+    // Mode selection event listeners
+    function selectFriendMode() {
+      gameMode = 'friend';
+      difficultySelection.classList.add('hidden');
+      modeFriendContainer.classList.add('border-indigo-500');
+      modeComputerContainer.classList.remove('border-indigo-500');
+      startGame();
+    }
+    function selectComputerMode() {
+      gameMode = 'computer';
+      difficultySelection.classList.remove('hidden');
+      modeComputerContainer.classList.add('border-indigo-500');
+      modeFriendContainer.classList.remove('border-indigo-500');
+      // For computer mode, wait until a difficulty is chosen.
+    }
+    modeFriendContainer.addEventListener('click', selectFriendMode);
+    modeFriendBtn.addEventListener('click', selectFriendMode);
+    modeComputerContainer.addEventListener('click', selectComputerMode);
+    modeComputerBtn.addEventListener('click', selectComputerMode);
+
+    difficultyButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        computerDifficulty = btn.getAttribute('data-difficulty');
+        // Visual indicator for selected difficulty
+        difficultyButtons.forEach(b => b.classList.remove('ring-2', 'ring-white'));
+        btn.classList.add('ring-2', 'ring-white');
+        startGame();
+      });
+    });
+
+    // Start game: hide start screen and show game board.
+    function startGame() {
+      startScreen.classList.add('hidden');
+      gameContainer.classList.remove('hidden');
+      resetGame();
+    }
+
+    // Back to Mode Select: hide game board and show start screen.
+    backBtn.addEventListener('click', () => {
+      gameContainer.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    });
+
+    // Game logic
+    let currentPlayer = 'X';
+    let gameActive = true;
+    let gameState = Array(9).fill("");
+
+    const winningConditions = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    function updateStatus(message) {
+      statusDiv.textContent = message;
+    }
+
+    function highlightWinningCells(indices) {
+      indices.forEach(i => {
+        const likeIcon = document.createElement('div');
+        likeIcon.className = "like-icon";
+        likeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-8 h-8 text-pink-500" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>`;
+        likeIcon.style.position = 'absolute';
+        likeIcon.style.top = '50%';
+        likeIcon.style.left = '50%';
+        likeIcon.style.transform = 'translate(-50%, -50%)';
+        likeIcon.style.pointerEvents = 'none';
+        cells[i].appendChild(likeIcon);
+      });
+    }
+
+    function showToast(message, bgClass) {
+      const toastContainer = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast p-4 text-white ${bgClass} animate-popIn flex items-center justify-between relative`;
+      
+      const contentContainer = document.createElement('div');
+      contentContainer.className = "flex items-center";
+      
+      const icon = document.createElement('div');
+      icon.className = "toast-icon mr-3";
+      if(bgClass.includes('green')) {
+        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>`;
+      } else if(bgClass.includes('blue')) {
+        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20h.01" />
+        </svg>`;
+      } else {
+        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>`;
+      }
+      contentContainer.appendChild(icon);
+      
+      const messageSpan = document.createElement('span');
+      messageSpan.textContent = message;
+      contentContainer.appendChild(messageSpan);
+      
+      toast.appendChild(contentContainer);
+      
+      const closeBtn = document.createElement('button');
+      closeBtn.className = "ml-4 text-white font-bold focus:outline-none";
+      closeBtn.textContent = "×";
+      toast.appendChild(closeBtn);
+      
+      const progressBar = document.createElement('div');
+      progressBar.className = "toast-progress";
+      progressBar.style.width = "100%";
+      toast.appendChild(progressBar);
+      
+      toastContainer.appendChild(toast);
+      
+      let totalTime = 3000;
+      let elapsedTime = 0;
+      let lastTime = performance.now();
+      let paused = false;
+      let dismissed = false;
+      
+      function dismissToast() {
+        if (dismissed) return;
+        dismissed = true;
+        toast.classList.remove('animate-popIn');
+        toast.classList.add('animate-rotateFadeOut');
+        setTimeout(() => toast.remove(), 500);
+      }
+      
+      closeBtn.addEventListener('click', dismissToast);
+      
+      toast.addEventListener('mouseenter', () => { paused = true; });
+      toast.addEventListener('mouseleave', () => { paused = false; lastTime = performance.now(); });
+      
+      function update() {
+        if (dismissed) return;
+        const now = performance.now();
+        if (!paused) {
+          elapsedTime += now - lastTime;
+        }
+        lastTime = now;
+        const remaining = totalTime - elapsedTime;
+        if (remaining <= 0) {
+          progressBar.style.width = "0%";
+          dismissToast();
+          return;
+        } else {
+          const percent = (remaining / totalTime) * 100;
+          progressBar.style.width = percent + '%';
+        }
+        requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    const handleCellClick = (e) => {
+      const clickedCell = e.target;
+      const clickedIndex = parseInt(clickedCell.getAttribute('data-index'));
+      if (gameState[clickedIndex] !== "" || !gameActive) return;
+      // In computer mode, only allow human moves (X)
+      if(gameMode === 'computer' && currentPlayer !== 'X') return;
+      gameState[clickedIndex] = currentPlayer;
+      
+      if (currentPlayer === 'X') {
+        clickedCell.classList.add('text-blue-500');
+      } else {
+        clickedCell.classList.add('text-red-500');
+      }
+      clickedCell.textContent = currentPlayer;
+      
+      if (checkWin()) {
+        updateStatus(`Player ${currentPlayer} wins!`);
+        showToast(`Player ${currentPlayer} wins!`, 'bg-green-500');
+        highlightWinningCells(getWinningCells());
+        gameActive = false;
+        return;
+      }
+      if (!gameState.includes("")) {
+        updateStatus("Game ended in a draw!");
+        showToast("Game ended in a draw!", 'bg-blue-500');
+        gameActive = false;
+        return;
+      }
+      
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      currentPlayerSpan.textContent = currentPlayer;
+      updateStatus(`Player ${currentPlayer}'s turn`);
+
+      if(gameMode === 'computer' && currentPlayer === 'O'){
+        setTimeout(computerMove, 500);
+      }
+    };
+
+    const checkWin = () => {
+      for (let condition of winningConditions) {
+        const [a, b, c] = condition;
+        if (gameState[a] && gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const getWinningCells = () => {
+      for (let condition of winningConditions) {
+        const [a, b, c] = condition;
+        if (gameState[a] && gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+          return condition;
+        }
+      }
+      return [];
+    };
+
+    function getRandomMove() {
+      const emptyIndices = gameState.map((val, index) => val === "" ? index : null).filter(v => v !== null);
+      return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+    }
+
+    function getNormalMove() {
+      for (let i = 0; i < gameState.length; i++) {
+        if (gameState[i] === "") {
+          gameState[i] = 'O';
+          if (checkWin()) {
+            gameState[i] = "";
+            return i;
+          }
+          gameState[i] = "";
+        }
+      }
+      for (let i = 0; i < gameState.length; i++) {
+        if (gameState[i] === "") {
+          gameState[i] = 'X';
+          if (checkWin()) {
+            gameState[i] = "";
+            return i;
+          }
+          gameState[i] = "";
+        }
+      }
+      return getRandomMove();
+    }
+
+    function getEmptyIndices(board) {
+      return board.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+    }
+
+    function checkWinner(board, player) {
+      for (let condition of winningConditions) {
+        const [a, b, c] = condition;
+        if (board[a] === player && board[b] === player && board[c] === player) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function minimax(newBoard, player) {
+      const availSpots = getEmptyIndices(newBoard);
+      if (checkWinner(newBoard, 'X')) {
+        return {score: -10};
+      } else if (checkWinner(newBoard, 'O')) {
+        return {score: 10};
+      } else if (availSpots.length === 0) {
+        return {score: 0};
+      }
+      
+      let moves = [];
+      for (let i = 0; i < availSpots.length; i++) {
+        let move = {};
+        move.index = availSpots[i];
+        newBoard[availSpots[i]] = player;
+        
+        if (player === 'O') {
+          const result = minimax(newBoard, 'X');
+          move.score = result.score;
+        } else {
+          const result = minimax(newBoard, 'O');
+          move.score = result.score;
+        }
+        newBoard[availSpots[i]] = "";
+        moves.push(move);
+      }
+      
+      let bestMove;
+      if (player === 'O') {
+        let bestScore = -Infinity;
+        for (let i = 0; i < moves.length; i++) {
+          if (moves[i].score > bestScore) {
+            bestScore = moves[i].score;
+            bestMove = moves[i];
+          }
+        }
+      } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < moves.length; i++) {
+          if (moves[i].score < bestScore) {
+            bestScore = moves[i].score;
+            bestMove = moves[i];
+          }
+        }
+      }
+      return bestMove;
+    }
+
+    function getBestMove() {
+      const bestMove = minimax(gameState.slice(), 'O');
+      return bestMove.index;
+    }
+
+    function computerMove() {
+      if (!gameActive) return;
+      let moveIndex;
+      if (computerDifficulty === 'easy') {
+        moveIndex = getRandomMove();
+      } else if (computerDifficulty === 'normal') {
+        moveIndex = getNormalMove();
+      } else if (computerDifficulty === 'hard') {
+        moveIndex = getBestMove();
+      }
+      if (moveIndex !== undefined) {
+        gameState[moveIndex] = 'O';
+        const cell = document.querySelector(`.cell[data-index='${moveIndex}']`);
+        cell.classList.add('text-red-500');
+        cell.textContent = 'O';
+
+        if (checkWin()) {
+          updateStatus(`Player O wins!`);
+          showToast(`Player O wins!`, 'bg-green-500');
+          highlightWinningCells(getWinningCells());
+          gameActive = false;
+          return;
+        }
+        if (!gameState.includes("")) {
+          updateStatus("Game ended in a draw!");
+          showToast("Game ended in a draw!", 'bg-blue-500');
+          gameActive = false;
+          return;
+        }
+        currentPlayer = 'X';
+        currentPlayerSpan.textContent = currentPlayer;
+        updateStatus(`Player ${currentPlayer}'s turn`);
+      }
+    }
+
+    const resetGame = () => {
+      currentPlayer = 'X';
+      gameActive = true;
+      gameState = Array(9).fill("");
+      currentPlayerSpan.textContent = currentPlayer;
+      updateStatus(`Player ${currentPlayer}'s turn`);
+      cells.forEach(cell => {
+        cell.textContent = "";
+        cell.classList.remove('text-blue-500', 'text-red-500');
+        const likeIcons = cell.querySelectorAll('.like-icon');
+        likeIcons.forEach(icon => icon.remove());
+      });
+    };
+
+    cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+    resetBtn.addEventListener('click', resetGame);
+  </script>
+</body>
+</html>
