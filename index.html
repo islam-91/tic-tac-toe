@@ -206,7 +206,6 @@
     ];
 
     // --- Router based on URL path ---
-    // The router now only runs on page load since navigation forces a full reload.
     function router() {
       const path = window.location.pathname;
       if (path === "/friend") {
@@ -214,10 +213,12 @@
         showGame();
       } else if (path.startsWith("/computer/")) {
         gameMode = "computer";
+        // Extract difficulty from the URL (/computer/difficulty)
         const parts = path.split("/");
         computerDifficulty = parts[2] || "easy";
         showGame();
       } else {
+        // Default route: show the start screen
         showStart();
       }
     }
@@ -233,14 +234,18 @@
       gameContainer.classList.add("hidden");
     }
 
+    // Listen for back/forward navigation
+    window.addEventListener("popstate", router);
+
     // On page load, call the router.
     document.addEventListener("DOMContentLoaded", () => {
       router();
     });
 
-    // --- Mode selection handlers using full reload ---
+    // --- Mode selection handlers ---
     function selectFriendMode() {
-      window.location.href = "/friend";
+      history.pushState(null, "", "/friend");
+      router();
     }
 
     function selectComputerMode() {
@@ -253,17 +258,23 @@
     modeComputerContainer.addEventListener("click", selectComputerMode);
     modeComputerBtn.addEventListener("click", selectComputerMode);
 
-    // When a difficulty is selected, navigate via full reload to /computer/:difficulty
+    // When a difficulty is selected, navigate to /computer/:difficulty
     difficultyButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
         const diff = btn.getAttribute("data-difficulty");
-        window.location.href = `/computer/${diff}`;
+        history.pushState(null, "", `/computer/${diff}`);
+        // Optionally, add a visual indicator for selection.
+        difficultyButtons.forEach((b) => b.classList.remove("ring-2", "ring-white"));
+        btn.classList.add("ring-2", "ring-white");
+        router();
       });
     });
 
-    // Back button returns to the start screen via full reload.
+    // Back button returns to the start screen.
     backBtn.addEventListener("click", () => {
-      window.location.href = "/";
+      history.pushState(null, "", "/");
+      router();
+      resetGame();
     });
 
     // --- Game Logic Functions ---
