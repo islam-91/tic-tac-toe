@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tic Tac Toe - Enhanced UI/UX with Routes</title>
+  <!-- Boxicons CSS -->
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Box Icons CSS -->
-  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <style>
     /* Fade in animation for containers */
     @keyframes fadeIn {
@@ -63,8 +63,8 @@
       box-shadow: 0 14px 28px rgba(0,0,0,0.3);
     }
     .toast-icon i {
-      font-size: 1.75rem;
-      line-height: 1;
+      width: 1.75rem;
+      height: 1.75rem;
     }
     .toast-progress {
       height: 5px;
@@ -105,14 +105,14 @@
         <!-- Play with Friend -->
         <div id="mode-friend-container" class="mode-option p-4 rounded-lg border-2 border-transparent hover:border-indigo-500 transition cursor-pointer">
           <button id="mode-friend" class="flex flex-col items-center focus:outline-none">
-            <i class="bx bx-group w-12 h-12 mb-2 text-indigo-500"></i>
+            <i class="bx bx-user text-indigo-500 text-3xl mb-2"></i>
             <span class="font-medium text-gray-700 dark:text-gray-300">Play with Friend</span>
           </button>
         </div>
         <!-- Play with Computer -->
         <div id="mode-computer-container" class="mode-option p-4 rounded-lg border-2 border-transparent hover:border-indigo-500 transition cursor-pointer">
           <button id="mode-computer" class="flex flex-col items-center focus:outline-none">
-            <i class="bx bx-desktop w-12 h-12 mb-2 text-indigo-500"></i>
+            <i class="bx bx-desktop text-indigo-500 text-3xl mb-2"></i>
             <span class="font-medium text-gray-700 dark:text-gray-300">Play with Computer</span>
           </button>
         </div>
@@ -123,15 +123,15 @@
       <h3 class="text-center text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Select Difficulty</h3>
       <div class="flex justify-center gap-4">
         <button data-difficulty="easy" class="difficulty-btn p-3 bg-green-500 hover:bg-green-600 transition text-white rounded-lg flex flex-col items-center focus:outline-none">
-          <i class="bx bx-happy w-8 h-8 mb-1"></i>
+          <i class="bx bx-play-circle text-2xl mb-1"></i>
           <span>Easy</span>
         </button>
         <button data-difficulty="normal" class="difficulty-btn p-3 bg-yellow-500 hover:bg-yellow-600 transition text-white rounded-lg flex flex-col items-center focus:outline-none">
-          <i class="bx bx-meh w-8 h-8 mb-1"></i>
+          <i class="bx bx-dots-horizontal-rounded text-2xl mb-1"></i>
           <span>Normal</span>
         </button>
         <button data-difficulty="hard" class="difficulty-btn p-3 bg-red-500 hover:bg-red-600 transition text-white rounded-lg flex flex-col items-center focus:outline-none">
-          <i class="bx bx-angry w-8 h-8 mb-1"></i>
+          <i class="bx bx-minus-circle text-2xl mb-1"></i>
           <span>Hard</span>
         </button>
       </div>
@@ -286,7 +286,7 @@
       indices.forEach((i) => {
         const likeIcon = document.createElement("div");
         likeIcon.className = "like-icon";
-        likeIcon.innerHTML = `<i class="bx bx-heart text-pink-500 w-8 h-8"></i>`;
+        likeIcon.innerHTML = `<i class="bx bx-heart text-pink-500 text-2xl"></i>`;
         likeIcon.style.position = "absolute";
         likeIcon.style.top = "50%";
         likeIcon.style.left = "50%";
@@ -307,11 +307,11 @@
       const icon = document.createElement("div");
       icon.className = "toast-icon mr-3";
       if (bgClass.includes("green")) {
-        icon.innerHTML = `<i class="bx bx-check-circle text-xl"></i>`;
+        icon.innerHTML = `<i class="bx bx-check text-white text-2xl"></i>`;
       } else if (bgClass.includes("blue")) {
-        icon.innerHTML = `<i class="bx bx-info-circle text-xl"></i>`;
+        icon.innerHTML = `<i class="bx bx-info-circle text-white text-2xl"></i>`;
       } else {
-        icon.innerHTML = `<i class="bx bx-error text-xl"></i>`;
+        icon.innerHTML = `<i class="bx bx-error text-white text-2xl"></i>`;
       }
       contentContainer.appendChild(icon);
       
