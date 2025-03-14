@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tic Tac Toe - Enhanced UI/UX</title>
+  <title>Tic Tac Toe - Enhanced UI/UX with Routing</title>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -151,7 +151,7 @@
     <p class="text-center text-gray-600 dark:text-gray-400 text-sm">Tap a mode to begin</p>
   </div>
 
-  <!-- Game Container (initially hidden) -->
+  <!-- Game Container (controlled by routing) -->
   <div id="game-container" class="hidden w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg animate-fadeIn">
     <div class="flex justify-between items-center mb-4">
       <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Tic Tac Toe</h1>
@@ -183,8 +183,6 @@
   <div id="toast-container" class="fixed top-4 right-4 space-y-4 z-50"></div>
 
   <script>
-   
-
     // Grab elements
     const startScreen = document.getElementById('start-screen');
     const gameContainer = document.getElementById('game-container');
@@ -202,38 +200,44 @@
     const resetBtn = document.getElementById('reset');
 
     // Game settings
-    let gameMode = 'friend'; // 'friend' or 'computer'
-    let computerDifficulty = 'easy'; // 'easy', 'normal', 'hard'
+    let gameMode = localStorage.getItem('gameMode') || '';
+    let computerDifficulty = localStorage.getItem('computerDifficulty') || 'easy';
 
-    // On page load, check if a mode is stored in localStorage.
-    document.addEventListener('DOMContentLoaded', () => {
-      const storedGameMode = localStorage.getItem('gameMode');
-      const storedDifficulty = localStorage.getItem('computerDifficulty');
-      if (storedGameMode) {
-        gameMode = storedGameMode;
-        if (storedDifficulty) {
-          computerDifficulty = storedDifficulty;
-        }
-        // Show game board and hide start screen.
+    // --- Router ---
+    function router() {
+      const hash = window.location.hash;
+      if (hash === "#game" && gameMode) {
         startScreen.classList.add('hidden');
         gameContainer.classList.remove('hidden');
-        resetGame();
       } else {
-        // No mode set: show start screen.
         startScreen.classList.remove('hidden');
         gameContainer.classList.add('hidden');
       }
+    }
+    window.addEventListener("hashchange", router);
+    // On page load, decide which route to show:
+    document.addEventListener('DOMContentLoaded', () => {
+      // If a game mode is stored, default to #game, else #start.
+      if (gameMode) {
+        window.location.hash = "#game";
+      } else {
+        window.location.hash = "#start";
+      }
+      router();
     });
 
     // Mode selection event handlers:
     function selectFriendMode() {
       localStorage.setItem('gameMode', 'friend');
-      // Reload to show game board.
-      window.location.reload();
+      gameMode = 'friend';
+      // Navigate to game route without reloading
+      window.location.hash = "#game";
+      resetGame();
     }
 
     function selectComputerMode() {
       localStorage.setItem('gameMode', 'computer');
+      gameMode = 'computer';
       // Reveal difficulty options (waiting for user to choose one).
       difficultySelection.classList.remove('hidden');
     }
@@ -243,24 +247,28 @@
     modeComputerContainer.addEventListener('click', selectComputerMode);
     modeComputerBtn.addEventListener('click', selectComputerMode);
 
-    // When a difficulty is selected, store it and reload.
+    // When a difficulty is selected, store it and navigate to game route.
     difficultyButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const diff = btn.getAttribute('data-difficulty');
         localStorage.setItem('computerDifficulty', diff);
+        computerDifficulty = diff;
         // Add visual ring to indicate selection.
         difficultyButtons.forEach(b => b.classList.remove('ring-2', 'ring-white'));
         btn.classList.add('ring-2', 'ring-white');
-        // Reload to show game board.
-        window.location.reload();
+        window.location.hash = "#game";
+        resetGame();
       });
     });
 
-    // Back button clears mode/difficulty and reloads to show start screen.
+    // Back button clears mode/difficulty and navigates to start screen.
     backBtn.addEventListener('click', () => {
       localStorage.removeItem('gameMode');
       localStorage.removeItem('computerDifficulty');
-      window.location.reload();
+      gameMode = '';
+      computerDifficulty = 'easy';
+      window.location.hash = "#start";
+      resetGame();
     });
 
     // --- Game Logic ---
