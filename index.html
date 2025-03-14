@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tic Tac Toe - Enhanced UI/UX with Routing</title>
+  <title>Tic Tac Toe - Enhanced UI/UX with Routes</title>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -93,7 +93,6 @@
 </head>
 <body class="bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-900 dark:to-gray-800 min-h-screen flex flex-col items-center justify-center p-4">
   
-
   <!-- Start Screen Container -->
   <div id="start-screen" class="w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg animate-fadeIn">
     <h1 class="text-3xl font-bold text-center mb-6 text-gray-800 dark:text-gray-100">Welcome to Tic Tac Toe</h1>
@@ -151,7 +150,7 @@
     <p class="text-center text-gray-600 dark:text-gray-400 text-sm">Tap a mode to begin</p>
   </div>
 
-  <!-- Game Container (controlled by routing) -->
+  <!-- Game Container -->
   <div id="game-container" class="hidden w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg animate-fadeIn">
     <div class="flex justify-between items-center mb-4">
       <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100">Tic Tac Toe</h1>
@@ -183,7 +182,7 @@
   <div id="toast-container" class="fixed top-4 right-4 space-y-4 z-50"></div>
 
   <script>
-    // Grab elements
+    // Grab DOM elements
     const startScreen = document.getElementById('start-screen');
     const gameContainer = document.getElementById('game-container');
     const modeFriendContainer = document.getElementById('mode-friend-container');
@@ -199,83 +198,12 @@
     const currentPlayerSpan = document.getElementById('current-player');
     const resetBtn = document.getElementById('reset');
 
-    // Game settings
-    let gameMode = localStorage.getItem('gameMode') || '';
-    let computerDifficulty = localStorage.getItem('computerDifficulty') || 'easy';
-
-    // --- Router ---
-    function router() {
-      const hash = window.location.hash;
-      if (hash === "#game" && gameMode) {
-        startScreen.classList.add('hidden');
-        gameContainer.classList.remove('hidden');
-      } else {
-        startScreen.classList.remove('hidden');
-        gameContainer.classList.add('hidden');
-      }
-    }
-    window.addEventListener("hashchange", router);
-    // On page load, decide which route to show:
-    document.addEventListener('DOMContentLoaded', () => {
-      // If a game mode is stored, default to #game, else #start.
-      if (gameMode) {
-        window.location.hash = "#game";
-      } else {
-        window.location.hash = "#start";
-      }
-      router();
-    });
-
-    // Mode selection event handlers:
-    function selectFriendMode() {
-      localStorage.setItem('gameMode', 'friend');
-      gameMode = 'friend';
-      // Navigate to game route without reloading
-      window.location.hash = "#game";
-      resetGame();
-    }
-
-    function selectComputerMode() {
-      localStorage.setItem('gameMode', 'computer');
-      gameMode = 'computer';
-      // Reveal difficulty options (waiting for user to choose one).
-      difficultySelection.classList.remove('hidden');
-    }
-
-    modeFriendContainer.addEventListener('click', selectFriendMode);
-    modeFriendBtn.addEventListener('click', selectFriendMode);
-    modeComputerContainer.addEventListener('click', selectComputerMode);
-    modeComputerBtn.addEventListener('click', selectComputerMode);
-
-    // When a difficulty is selected, store it and navigate to game route.
-    difficultyButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const diff = btn.getAttribute('data-difficulty');
-        localStorage.setItem('computerDifficulty', diff);
-        computerDifficulty = diff;
-        // Add visual ring to indicate selection.
-        difficultyButtons.forEach(b => b.classList.remove('ring-2', 'ring-white'));
-        btn.classList.add('ring-2', 'ring-white');
-        window.location.hash = "#game";
-        resetGame();
-      });
-    });
-
-    // Back button clears mode/difficulty and navigates to start screen.
-    backBtn.addEventListener('click', () => {
-      localStorage.removeItem('gameMode');
-      localStorage.removeItem('computerDifficulty');
-      gameMode = '';
-      computerDifficulty = 'easy';
-      window.location.hash = "#start";
-      resetGame();
-    });
-
-    // --- Game Logic ---
-    let currentPlayer = 'X';
+    // Game state variables
+    let gameMode = ""; // "friend" or "computer"
+    let computerDifficulty = "easy"; // "easy", "normal", "hard"
+    let currentPlayer = "X";
     let gameActive = true;
     let gameState = Array(9).fill("");
-
     const winningConditions = [
       [0, 1, 2],
       [3, 4, 5],
@@ -287,41 +215,114 @@
       [2, 4, 6]
     ];
 
+    // --- Router based on URL path ---
+    function router() {
+      const path = window.location.pathname;
+      if (path === "/friend") {
+        gameMode = "friend";
+        showGame();
+      } else if (path.startsWith("/computer/")) {
+        gameMode = "computer";
+        // Extract difficulty from the URL (/computer/difficulty)
+        const parts = path.split("/");
+        computerDifficulty = parts[2] || "easy";
+        showGame();
+      } else {
+        // Default route: show the start screen
+        showStart();
+      }
+    }
+
+    function showGame() {
+      startScreen.classList.add("hidden");
+      gameContainer.classList.remove("hidden");
+      resetGame();
+    }
+
+    function showStart() {
+      startScreen.classList.remove("hidden");
+      gameContainer.classList.add("hidden");
+    }
+
+    // Listen for back/forward navigation
+    window.addEventListener("popstate", router);
+
+    // On page load, call the router.
+    document.addEventListener("DOMContentLoaded", () => {
+      router();
+    });
+
+    // --- Mode selection handlers ---
+    function selectFriendMode() {
+      history.pushState(null, "", "/friend");
+      router();
+    }
+
+    function selectComputerMode() {
+      // Reveal difficulty options on the start screen.
+      difficultySelection.classList.remove("hidden");
+    }
+
+    modeFriendContainer.addEventListener("click", selectFriendMode);
+    modeFriendBtn.addEventListener("click", selectFriendMode);
+    modeComputerContainer.addEventListener("click", selectComputerMode);
+    modeComputerBtn.addEventListener("click", selectComputerMode);
+
+    // When a difficulty is selected, navigate to /computer/:difficulty
+    difficultyButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const diff = btn.getAttribute("data-difficulty");
+        history.pushState(null, "", `/computer/${diff}`);
+        // Optionally, add a visual indicator for selection.
+        difficultyButtons.forEach((b) => b.classList.remove("ring-2", "ring-white"));
+        btn.classList.add("ring-2", "ring-white");
+        router();
+      });
+    });
+
+    // Back button returns to the start screen.
+    backBtn.addEventListener("click", () => {
+      history.pushState(null, "", "/");
+      router();
+      resetGame();
+    });
+
+    // --- Game Logic Functions ---
     function updateStatus(message) {
       statusDiv.textContent = message;
     }
 
     function highlightWinningCells(indices) {
-      indices.forEach(i => {
-        const likeIcon = document.createElement('div');
+      indices.forEach((i) => {
+        const likeIcon = document.createElement("div");
         likeIcon.className = "like-icon";
         likeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-8 h-8 text-pink-500" viewBox="0 0 24 24">
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
         </svg>`;
-        likeIcon.style.position = 'absolute';
-        likeIcon.style.top = '50%';
-        likeIcon.style.left = '50%';
-        likeIcon.style.transform = 'translate(-50%, -50%)';
-        likeIcon.style.pointerEvents = 'none';
+        likeIcon.style.position = "absolute";
+        likeIcon.style.top = "50%";
+        likeIcon.style.left = "50%";
+        likeIcon.style.transform = "translate(-50%, -50%)";
+        likeIcon.style.pointerEvents = "none";
         cells[i].appendChild(likeIcon);
       });
     }
 
     function showToast(message, bgClass) {
-      const toastContainer = document.getElementById('toast-container');
-      const toast = document.createElement('div');
+      const toastContainer = document.getElementById("toast-container");
+      const toast = document.createElement("div");
       toast.className = `toast p-4 text-white ${bgClass} animate-popIn flex items-center justify-between relative`;
       
-      const contentContainer = document.createElement('div');
+      const contentContainer = document.createElement("div");
       contentContainer.className = "flex items-center";
       
-      const icon = document.createElement('div');
+      const icon = document.createElement("div");
       icon.className = "toast-icon mr-3";
-      if(bgClass.includes('green')) {
+      if (bgClass.includes("green")) {
         icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>`;
-      } else if(bgClass.includes('blue')) {
+      } else if (bgClass.includes("blue")) {
         icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20h.01" />
         </svg>`;
@@ -332,18 +333,18 @@
       }
       contentContainer.appendChild(icon);
       
-      const messageSpan = document.createElement('span');
+      const messageSpan = document.createElement("span");
       messageSpan.textContent = message;
       contentContainer.appendChild(messageSpan);
       
       toast.appendChild(contentContainer);
       
-      const closeBtn = document.createElement('button');
+      const closeBtn = document.createElement("button");
       closeBtn.className = "ml-4 text-white font-bold focus:outline-none";
       closeBtn.textContent = "×";
       toast.appendChild(closeBtn);
       
-      const progressBar = document.createElement('div');
+      const progressBar = document.createElement("div");
       progressBar.className = "toast-progress";
       progressBar.style.width = "100%";
       toast.appendChild(progressBar);
@@ -359,15 +360,15 @@
       function dismissToast() {
         if (dismissed) return;
         dismissed = true;
-        toast.classList.remove('animate-popIn');
-        toast.classList.add('animate-rotateFadeOut');
+        toast.classList.remove("animate-popIn");
+        toast.classList.add("animate-rotateFadeOut");
         setTimeout(() => toast.remove(), 500);
       }
       
-      closeBtn.addEventListener('click', dismissToast);
+      closeBtn.addEventListener("click", dismissToast);
       
-      toast.addEventListener('mouseenter', () => { paused = true; });
-      toast.addEventListener('mouseleave', () => { paused = false; lastTime = performance.now(); });
+      toast.addEventListener("mouseenter", () => { paused = true; });
+      toast.addEventListener("mouseleave", () => { paused = false; lastTime = performance.now(); });
       
       function update() {
         if (dismissed) return;
@@ -383,7 +384,7 @@
           return;
         } else {
           const percent = (remaining / totalTime) * 100;
-          progressBar.style.width = percent + '%';
+          progressBar.style.width = percent + "%";
         }
         requestAnimationFrame(update);
       }
@@ -392,38 +393,38 @@
 
     const handleCellClick = (e) => {
       const clickedCell = e.target;
-      const clickedIndex = parseInt(clickedCell.getAttribute('data-index'));
+      const clickedIndex = parseInt(clickedCell.getAttribute("data-index"));
       if (gameState[clickedIndex] !== "" || !gameActive) return;
       // In computer mode, only allow human moves (X)
-      if (gameMode === 'computer' && currentPlayer !== 'X') return;
+      if (gameMode === "computer" && currentPlayer !== "X") return;
       gameState[clickedIndex] = currentPlayer;
       
-      if (currentPlayer === 'X') {
-        clickedCell.classList.add('text-blue-500');
+      if (currentPlayer === "X") {
+        clickedCell.classList.add("text-blue-500");
       } else {
-        clickedCell.classList.add('text-red-500');
+        clickedCell.classList.add("text-red-500");
       }
       clickedCell.textContent = currentPlayer;
       
       if (checkWin()) {
         updateStatus(`Player ${currentPlayer} wins!`);
-        showToast(`Player ${currentPlayer} wins!`, 'bg-green-500');
+        showToast(`Player ${currentPlayer} wins!`, "bg-green-500");
         highlightWinningCells(getWinningCells());
         gameActive = false;
         return;
       }
       if (!gameState.includes("")) {
         updateStatus("Game ended in a draw!");
-        showToast("Game ended in a draw!", 'bg-blue-500');
+        showToast("Game ended in a draw!", "bg-blue-500");
         gameActive = false;
         return;
       }
       
-      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
       currentPlayerSpan.textContent = currentPlayer;
       updateStatus(`Player ${currentPlayer}'s turn`);
-
-      if (gameMode === 'computer' && currentPlayer === 'O') {
+      
+      if (gameMode === "computer" && currentPlayer === "O") {
         setTimeout(computerMove, 500);
       }
     };
@@ -456,7 +457,7 @@
     function getNormalMove() {
       for (let i = 0; i < gameState.length; i++) {
         if (gameState[i] === "") {
-          gameState[i] = 'O';
+          gameState[i] = "O";
           if (checkWin()) {
             gameState[i] = "";
             return i;
@@ -466,7 +467,7 @@
       }
       for (let i = 0; i < gameState.length; i++) {
         if (gameState[i] === "") {
-          gameState[i] = 'X';
+          gameState[i] = "X";
           if (checkWin()) {
             gameState[i] = "";
             return i;
@@ -493,12 +494,12 @@
 
     function minimax(newBoard, player) {
       const availSpots = getEmptyIndices(newBoard);
-      if (checkWinner(newBoard, 'X')) {
-        return {score: -10};
-      } else if (checkWinner(newBoard, 'O')) {
-        return {score: 10};
+      if (checkWinner(newBoard, "X")) {
+        return { score: -10 };
+      } else if (checkWinner(newBoard, "O")) {
+        return { score: 10 };
       } else if (availSpots.length === 0) {
-        return {score: 0};
+        return { score: 0 };
       }
       
       let moves = [];
@@ -507,11 +508,11 @@
         move.index = availSpots[i];
         newBoard[availSpots[i]] = player;
         
-        if (player === 'O') {
-          const result = minimax(newBoard, 'X');
+        if (player === "O") {
+          const result = minimax(newBoard, "X");
           move.score = result.score;
         } else {
-          const result = minimax(newBoard, 'O');
+          const result = minimax(newBoard, "O");
           move.score = result.score;
         }
         newBoard[availSpots[i]] = "";
@@ -519,7 +520,7 @@
       }
       
       let bestMove;
-      if (player === 'O') {
+      if (player === "O") {
         let bestScore = -Infinity;
         for (let i = 0; i < moves.length; i++) {
           if (moves[i].score > bestScore) {
@@ -540,61 +541,61 @@
     }
 
     function getBestMove() {
-      const bestMove = minimax(gameState.slice(), 'O');
+      const bestMove = minimax(gameState.slice(), "O");
       return bestMove.index;
     }
 
     function computerMove() {
       if (!gameActive) return;
       let moveIndex;
-      if (computerDifficulty === 'easy') {
+      if (computerDifficulty === "easy") {
         moveIndex = getRandomMove();
-      } else if (computerDifficulty === 'normal') {
+      } else if (computerDifficulty === "normal") {
         moveIndex = getNormalMove();
-      } else if (computerDifficulty === 'hard') {
+      } else if (computerDifficulty === "hard") {
         moveIndex = getBestMove();
       }
       if (moveIndex !== undefined) {
-        gameState[moveIndex] = 'O';
+        gameState[moveIndex] = "O";
         const cell = document.querySelector(`.cell[data-index='${moveIndex}']`);
-        cell.classList.add('text-red-500');
-        cell.textContent = 'O';
+        cell.classList.add("text-red-500");
+        cell.textContent = "O";
 
         if (checkWin()) {
           updateStatus(`Player O wins!`);
-          showToast(`Player O wins!`, 'bg-green-500');
+          showToast(`Player O wins!`, "bg-green-500");
           highlightWinningCells(getWinningCells());
           gameActive = false;
           return;
         }
         if (!gameState.includes("")) {
           updateStatus("Game ended in a draw!");
-          showToast("Game ended in a draw!", 'bg-blue-500');
+          showToast("Game ended in a draw!", "bg-blue-500");
           gameActive = false;
           return;
         }
-        currentPlayer = 'X';
+        currentPlayer = "X";
         currentPlayerSpan.textContent = currentPlayer;
         updateStatus(`Player ${currentPlayer}'s turn`);
       }
     }
 
     const resetGame = () => {
-      currentPlayer = 'X';
+      currentPlayer = "X";
       gameActive = true;
       gameState = Array(9).fill("");
       currentPlayerSpan.textContent = currentPlayer;
       updateStatus(`Player ${currentPlayer}'s turn`);
       cells.forEach(cell => {
         cell.textContent = "";
-        cell.classList.remove('text-blue-500', 'text-red-500');
-        const likeIcons = cell.querySelectorAll('.like-icon');
+        cell.classList.remove("text-blue-500", "text-red-500");
+        const likeIcons = cell.querySelectorAll(".like-icon");
         likeIcons.forEach(icon => icon.remove());
       });
     };
 
-    cells.forEach(cell => cell.addEventListener('click', handleCellClick));
-    resetBtn.addEventListener('click', resetGame);
+    cells.forEach(cell => cell.addEventListener("click", handleCellClick));
+    resetBtn.addEventListener("click", resetGame);
   </script>
 </body>
 </html>
